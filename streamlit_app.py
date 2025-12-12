@@ -12,10 +12,20 @@ import plotly.express as px
 from datetime import datetime
 import requests
 
-# Configuration
-API_URL = st.secrets.get("API_URL", "http://localhost:8000") if hasattr(st, 'secrets') else "http://localhost:8000"
+# Configuration - API URL with fallback for demo mode
+try:
+    API_URL = st.secrets.get("API_URL", None)
+except:
+    API_URL = None
+
+# Demo mode flag
+DEMO_MODE = API_URL is None
 
 st.set_page_config(page_title="Sewer Flow Modelling", layout="wide")
+
+# Add demo mode banner
+if DEMO_MODE:
+    st.warning("⚠️ Running in DEMO MODE (API not connected). Add API_URL to Streamlit secrets to enable full functionality.")
 
 # Sidebar navigation
 st.sidebar.title("Navigation")
@@ -41,25 +51,35 @@ if page == "Project Setup":
         
         if st.button("Create Project", type="primary"):
             if project_name:
-                try:
-                    response = requests.post(
-                        f"{API_URL}/projects/",
-                        json={
-                            "name": project_name,
-                            "description": project_desc,
-                            "location": project_location,
-                            "owner": project_owner,
-                        },
-                        timeout=5
-                    )
-                    if response.status_code == 201:
-                        st.success(f"✅ Project '{project_name}' created successfully!")
-                        st.session_state.current_project = response.json()
-                        st.rerun()
-                    else:
-                        st.error(f"API Error: {response.text}")
-                except Exception as e:
-                    st.error(f"Connection error: {e}. Make sure API is running at {API_URL}")
+                if DEMO_MODE:
+                    st.success(f"✅ Project '{project_name}' created successfully! (Demo mode - data not persisted)")
+                    st.session_state.current_project = {
+                        "id": 1,
+                        "name": project_name,
+                        "description": project_desc,
+                        "location": project_location,
+                        "owner": project_owner,
+                    }
+                else:
+                    try:
+                        response = requests.post(
+                            f"{API_URL}/projects/",
+                            json={
+                                "name": project_name,
+                                "description": project_desc,
+                                "location": project_location,
+                                "owner": project_owner,
+                            },
+                            timeout=5
+                        )
+                        if response.status_code == 201:
+                            st.success(f"✅ Project '{project_name}' created successfully!")
+                            st.session_state.current_project = response.json()
+                            st.rerun()
+                        else:
+                            st.error(f"API Error: {response.text}")
+                    except Exception as e:
+                        st.error(f"Connection error: {e}. Make sure API is running at {API_URL}")
             else:
                 st.error("Please enter a project name")
     
@@ -85,27 +105,30 @@ if page == "Project Setup":
             
             if st.button("Add Site", type="primary"):
                 if site_name:
-                    try:
-                        response = requests.post(
-                            f"{API_URL}/projects/{current_proj['id']}/sites",
-                            json={
-                                "project_id": current_proj["id"],
-                                "name": site_name,
-                                "code": site_code,
-                                "latitude": latitude,
-                                "longitude": longitude,
-                                "pipe_material": pipe_material,
-                                "pipe_diameter_mm": pipe_diameter,
-                            },
-                            timeout=5
-                        )
-                        if response.status_code == 201:
-                            st.success(f"✅ Site '{site_name}' added successfully!")
-                            st.rerun()
-                        else:
-                            st.error(f"API Error: {response.text}")
-                    except Exception as e:
-                        st.error(f"Connection error: {e}")
+                    if DEMO_MODE:
+                        st.success(f"✅ Site '{site_name}' added successfully! (Demo mode - data not persisted)")
+                    else:
+                        try:
+                            response = requests.post(
+                                f"{API_URL}/projects/{current_proj['id']}/sites",
+                                json={
+                                    "project_id": current_proj["id"],
+                                    "name": site_name,
+                                    "code": site_code,
+                                    "latitude": latitude,
+                                    "longitude": longitude,
+                                    "pipe_material": pipe_material,
+                                    "pipe_diameter_mm": pipe_diameter,
+                                },
+                                timeout=5
+                            )
+                            if response.status_code == 201:
+                                st.success(f"✅ Site '{site_name}' added successfully!")
+                                st.rerun()
+                            else:
+                                st.error(f"API Error: {response.text}")
+                        except Exception as e:
+                            st.error(f"Connection error: {e}")
                 else:
                     st.error("Please enter a site name")
         else:
