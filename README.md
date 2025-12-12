@@ -7,7 +7,7 @@ FastAPI + SQLAlchemy backend with optional Streamlit UI for sewer flow modelling
 - Install deps: `pip install -r requirements-dev.txt`
 - Run API: `uvicorn app.main:app --reload`
 - Run tests: `pytest`
-- Run Streamlit UI: `streamlit run ui/main.py`
+- Run Streamlit UI: `streamlit run streamlit_app.py` (or `streamlit run ui/main.py`)
 
 ## Docker
 - `docker-compose up --build`
@@ -21,6 +21,12 @@ FastAPI + SQLAlchemy backend with optional Streamlit UI for sewer flow modelling
 - Models: see `db/models/core.py` (Project, Site, TimeSeriesRaw, TimeSeriesProcessed, RatingCurve).
 - Alembic scaffold: `alembic.ini`, scripts under `db/migrations`. Example command: `alembic revision --autogenerate -m "init" && alembic upgrade head`.
 - For a quick start with SQLite: `python scripts/seed_demo.py` creates tables.
+
+## Streamlit Cloud Deployment
+- Point Streamlit Cloud to this repo
+- Main file: `streamlit_app.py` (root level)
+- Branch: `main`
+- Python version: 3.11+
 
 ## Project layout
 - `app/` FastAPI app, routers, services (ingestion stub in `app/services/ingestion.py`).
