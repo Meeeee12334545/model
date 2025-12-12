@@ -10,6 +10,10 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
+import requests
+
+# Configuration
+API_URL = st.secrets.get("API_URL", "http://localhost:8000") if hasattr(st, 'secrets') else "http://localhost:8000"
 
 st.set_page_config(page_title="Sewer Flow Modelling", layout="wide")
 
@@ -37,30 +41,75 @@ if page == "Project Setup":
         
         if st.button("Create Project", type="primary"):
             if project_name:
-                st.success(f"✅ Project '{project_name}' created successfully!")
-                st.session_state.current_project = project_name
+                try:
+                    response = requests.post(
+                        f"{API_URL}/projects/",
+                        json={
+                            "name": project_name,
+                            "description": project_desc,
+                            "location": project_location,
+                            "owner": project_owner,
+                        },
+                        timeout=5
+                    )
+                    if response.status_code == 201:
+                        st.success(f"✅ Project '{project_name}' created successfully!")
+                        st.session_state.current_project = response.json()
+                        st.rerun()
+                    else:
+                        st.error(f"API Error: {response.text}")
+                except Exception as e:
+                    st.error(f"Connection error: {e}. Make sure API is running at {API_URL}")
             else:
                 st.error("Please enter a project name")
     
     with col2:
         st.subheader("Add Monitoring Site")
-        site_name = st.text_input("Site Name", placeholder="e.g., Station A")
-        site_code = st.text_input("Site Code", placeholder="e.g., ST-001")
         
-        col_lat, col_lon = st.columns(2)
-        with col_lat:
-            latitude = st.number_input("Latitude", value=0.0, format="%.6f")
-        with col_lon:
-            longitude = st.number_input("Longitude", value=0.0, format="%.6f")
-        
-        pipe_material = st.selectbox("Pipe Material", ["Concrete", "PVC", "Vitrified Clay", "Steel", "Other"])
-        pipe_diameter = st.number_input("Pipe Diameter (mm)", min_value=0, value=300)
-        
-        if st.button("Add Site", type="primary"):
-            if site_name:
-                st.success(f"✅ Site '{site_name}' added successfully!")
-            else:
-                st.error("Please enter a site name")
+        # Get current project
+        if 'current_project' in st.session_state and st.session_state.current_project:
+            current_proj = st.session_state.current_project
+            st.info(f"Adding site to: {current_proj.get('name', 'N/A')}")
+            
+            site_name = st.text_input("Site Name", placeholder="e.g., Station A")
+            site_code = st.text_input("Site Code", placeholder="e.g., ST-001")
+            
+            col_lat, col_lon = st.columns(2)
+            with col_lat:
+                latitude = st.number_input("Latitude", value=0.0, format="%.6f")
+            with col_lon:
+                longitude = st.number_input("Longitude", value=0.0, format="%.6f")
+            
+            pipe_material = st.selectbox("Pipe Material", ["Concrete", "PVC", "Vitrified Clay", "Steel", "Other"])
+            pipe_diameter = st.number_input("Pipe Diameter (mm)", min_value=0, value=300)
+            
+            if st.button("Add Site", type="primary"):
+                if site_name:
+                    try:
+                        response = requests.post(
+                            f"{API_URL}/projects/{current_proj['id']}/sites",
+                            json={
+                                "project_id": current_proj["id"],
+                                "name": site_name,
+                                "code": site_code,
+                                "latitude": latitude,
+                                "longitude": longitude,
+                                "pipe_material": pipe_material,
+                                "pipe_diameter_mm": pipe_diameter,
+                            },
+                            timeout=5
+                        )
+                        if response.status_code == 201:
+                            st.success(f"✅ Site '{site_name}' added successfully!")
+                            st.rerun()
+                        else:
+                            st.error(f"API Error: {response.text}")
+                    except Exception as e:
+                        st.error(f"Connection error: {e}")
+                else:
+                    st.error("Please enter a site name")
+        else:
+            st.info("Create a project first to add sites.")
 
 # Data Ingestion Page
 elif page == "Data Ingestion":

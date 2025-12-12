@@ -56,7 +56,7 @@ class TimeSeriesRaw(Base, TimestampMixin):
     unit: Mapped[str | None] = mapped_column(String(50))
     source: Mapped[str | None] = mapped_column(String(100))
     qc_flag: Mapped[str | None] = mapped_column(String(50))
-    metadata: Mapped[dict | None] = mapped_column(JSON)
+    record_metadata: Mapped[dict | None] = mapped_column(JSON)
 
     site: Mapped[Site] = relationship(back_populates="raw_series")
 
@@ -73,7 +73,7 @@ class TimeSeriesProcessed(Base, TimestampMixin):
     value: Mapped[float | None] = mapped_column(Float)
     unit: Mapped[str | None] = mapped_column(String(50))
     qc_summary: Mapped[str | None] = mapped_column(String(255))
-    metadata: Mapped[dict | None] = mapped_column(JSON)
+    record_metadata: Mapped[dict | None] = mapped_column(JSON)
 
     site: Mapped[Site] = relationship(back_populates="processed_series")
     source_raw: Mapped[TimeSeriesRaw | None] = relationship(foreign_keys=[source_raw_id])
