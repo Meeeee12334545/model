@@ -1,0 +1,24 @@
+# Copilot Instructions for this Repo
+
+- Repo purpose: build a sewer flow modelling web application per the provided implementation plan (ingestion → QC → cleaning → hydraulics → rainfall/I/I → exports → reporting → auth → deployment).
+- Current state: scaffolded FastAPI backend + Streamlit stub UI; SQLAlchemy models and Alembic scaffold are present but features are mostly placeholders.
+- Preferred stack: Python backend (FastAPI for APIs; Streamlit acceptable for lightweight UI), SQLAlchemy ORM, PostgreSQL in prod with SQLite allowed for local/dev, Dockerized environment.
+- Project structure: `app/` (FastAPI, routers under `app/api/routes`, services under `app/services`), `ui/` (Streamlit placeholder), `db/` (models in `db/models/core.py`, session in `db/session.py`, Alembic in `db/migrations`), `scripts/` (seed/init), `tests/` (pytest), config via `.env` and `app/config.py`, infra (`Dockerfile`, `docker-compose.yml`, `requirements*.txt`).
+- Data models: `Project`, `Site`, `TimeSeriesRaw`, `TimeSeriesProcessed`, `RatingCurve` defined in `db/models/core.py` with timestamp mixin, metadata/json fields, and indexes on (site_id, timestamp) for series tables. Extend with additional QC/metadata columns as features grow.
+- Migrations: Alembic scaffolded (`alembic.ini`, `db/migrations/env.py`, versions folder). Use sync URL conversion in env.py; set `APP_DATABASE_URL` to Postgres for real migrations. Typical flow: `alembic revision --autogenerate -m "msg" && alembic upgrade head`.
+- Data ingestion: `app/services/ingestion.py` has CSV loader + summarizer stubs; keep ingestion logic isolated and reusable by API and future UI. Handle timestamp parsing with UTC normalization.
+- Data quality control: plan to add range/spike/flat/missing/surcharge checks; persist QC results on processed tables. Keep hooks for plotting/flagging to support Streamlit UI.
+- Data scrubbing/cleaning: UI should allow selection, labeling, rating curve fitting; track audit trail and allow raw vs cleaned toggle. Keep cleaning functions isolated for reuse.
+- Hydraulic processing: add geometry helpers and flow calculators as standalone services; keep units explicit.
+- Rainfall & I/I: plan alignment/event detection; ensure consistent timezone handling across rainfall/flow series.
+- Model integration & exports: favor CSV/Excel outputs; prepare SWMM-friendly export shapes; consider dataset versioning early.
+- Visualization & reporting: Streamlit UI phases mirror domain flow; provide clear validation feedback on uploads and cleaning steps.
+- User management & security: use dependency-injected auth middleware/routers; plan roles Admin/Engineer/Viewer; enforce HTTPS/TLS in deployment.
+- Testing & docs: pytest configured (`pytest.ini`); sample test in `tests/test_health.py`. Add QC/hydraulic tests as features land; document new commands in README.
+- Deployment: Dockerfile + docker-compose provided (API + Postgres). Use env vars for secrets; never commit credentials.
+- Conventions: keep ASCII; add succinct comments only for non-obvious logic; organize by feature (router/service/model). Use `app/config.py` for settings; `db/session.py` for AsyncSession; prefer structured logging when adding pipelines.
+- Observability: prefer structured logging + minimal metrics (counts, QC flags) when building pipelines.
+- UX: Streamlit UI mirrors phases; surface validation feedback on uploads/cleaning.
+- Outputs: favor CSV/Excel for data exchanges; PDFs/Word for reports; enforce consistent timezone handling.
+- Secrets: never commit credentials; rely on env vars and .env examples.
+- Run basics: `uvicorn app.main:app --reload`, tests via `pytest`, UI via `streamlit run ui/main.py`, Docker via `docker-compose up --build`, migrations via `alembic revision --autogenerate && alembic upgrade head` (ensure sync DB URL in env).

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.env
+.venv
+venv/
+ENV/
+
+# Editors/OS
+.DS_Store
+.vscode/
+.idea/
+
+# Pytest/coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Bytecode
+*.log
+
+# Build
+build/
+dist/
+
+# Node/Streamlit cache
+.ui_cache/
+.streamlit/
